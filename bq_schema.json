@@ -1,0 +1,44 @@
+[
+  {
+    "name": "gcs_uri",
+    "type": "STRING",
+    "mode": "REQUIRED",
+    "description": "The full GCS URI of the processed file."
+  },
+  {
+    "name": "filename",
+    "type": "STRING",
+    "mode": "REQUIRED",
+    "description": "The name of the file."
+  },
+  {
+    "name": "file_type",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "The detected file format or extension."
+  },
+  {
+    "name": "processed_at",
+    "type": "TIMESTAMP",
+    "mode": "REQUIRED",
+    "description": "Timestamp when the document was processed."
+  },
+  {
+    "name": "word_count",
+    "type": "INTEGER",
+    "mode": "NULLABLE",
+    "description": "Total count of words parsed."
+  },
+  {
+    "name": "tags",
+    "type": "STRING",
+    "mode": "REPEATED",
+    "description": "Heuristically extracted category tags."
+  },
+  {
+    "name": "extracted_text",
+    "type": "STRING",
+    "mode": "NULLABLE",
+    "description": "Full extracted text or mock OCR results."
+  }
+]

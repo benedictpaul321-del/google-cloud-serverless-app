@@ -1,0 +1,43 @@
+name: Deploy to Google Cloud
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+jobs:
+  deploy:
+    name: Deploy Document Processor Pipeline
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      id-token: write  # Required if using Workload Identity Federation
+
+    steps:
+      # 1. Checkout repository
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      # 2. Authenticate to Google Cloud
+      # We support Service Account Key authentication here.
+      # You must add GCP_SA_KEY and GCP_PROJECT_ID to your GitHub Repository Secrets.
+      - name: Google Auth
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      # 3. Set up Google Cloud SDK (gcloud CLI)
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      # 4. Execute the deployment script
+      - name: Run Deployment Script
+        env:
+          PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+          CI: "true"
+        run: |
+          chmod +x deploy.sh
+          ./deploy.sh
