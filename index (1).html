@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Event-Driven Document Processor — GCP Pipeline</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0c0f14;
+    --surface: #141820;
+    --surface-alt: #1b2130;
+    --border: rgba(255,255,255,0.08);
+    --border-bright: rgba(255,255,255,0.14);
+    --text: #e8ecf0;
+    --muted: #7a8494;
+    --accent: #4ade80;
+    --accent-dim: rgba(74,222,128,0.12);
+    --accent-border: rgba(74,222,128,0.3);
+    --tag-bg: rgba(74,222,128,0.08);
+    --tag-text: #4ade80;
+    --blue: #60a5fa;
+    --blue-dim: rgba(96,165,250,0.1);
+    --amber: #fbbf24;
+    --amber-dim: rgba(251,191,36,0.1);
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', 'Courier New', monospace;
+  }
+
+  body {
+    font-family: var(--font-sans);
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  a { color: var(--blue); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+
+  /* ── Layout ── */
+  .container { max-width: 860px; margin: 0 auto; padding: 0 24px; }
+
+  /* ── Header ── */
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 20px 0;
+  }
+  .header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    animation: pulse 2.4s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.35; }
+  }
+  .gh-link {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    color: var(--muted);
+    border: 1px solid var(--border-bright);
+    padding: 6px 12px;
+    border-radius: 6px;
+    transition: color 0.15s, border-color 0.15s;
+  }
+  .gh-link:hover { color: var(--text); border-color: var(--accent-border); text-decoration: none; }
+  .gh-link svg { flex-shrink: 0; }
+
+  /* ── Hero ── */
+  .hero {
+    padding: 72px 0 56px;
+    border-bottom: 1px solid var(--border);
+  }
+  .eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.12em;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 20px;
+  }
+  h1 {
+    font-size: clamp(28px, 5vw, 44px);
+    font-weight: 600;
+    line-height: 1.18;
+    letter-spacing: -0.02em;
+    margin-bottom: 20px;
+    color: #f0f4f8;
+  }
+  h1 span { color: var(--accent); }
+  .hero-desc {
+    font-size: 16px;
+    color: var(--muted);
+    max-width: 600px;
+    line-height: 1.75;
+    margin-bottom: 32px;
+  }
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    background: var(--tag-bg);
+    color: var(--tag-text);
+    border: 1px solid var(--accent-border);
+  }
+
+  /* ── Architecture ── */
+  .section { padding: 56px 0; border-bottom: 1px solid var(--border); }
+  .section-label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 32px;
+  }
+
+  .arch-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+    row-gap: 0;
+    margin-bottom: 40px;
+  }
+  .arch-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    min-width: 100px;
+    flex: 1;
+  }
+  .arch-icon {
+    width: 48px; height: 48px;
+    background: var(--surface-alt);
+    border: 1px solid var(--border-bright);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 20px;
+  }
+  .arch-name {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+    text-align: center;
+  }
+  .arch-service {
+    font-size: 11px;
+    color: var(--accent);
+    text-align: center;
+    font-weight: 500;
+  }
+  .arch-arrow {
+    color: var(--border-bright);
+    font-size: 18px;
+    flex-shrink: 0;
+    padding: 0 4px;
+    margin-top: -18px;
+  }
+
+  /* ── Feature grid ── */
+  .features {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1px;
+    background: var(--border);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .feature {
+    background: var(--surface);
+    padding: 24px;
+  }
+  .feature-icon {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+  .feature h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .feature p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.65;
+  }
+
+  /* ── Schema table ── */
+  .schema-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    font-family: var(--font-mono);
+  }
+  .schema-table thead th {
+    text-align: left;
+    padding: 10px 14px;
+    color: var(--muted);
+    font-size: 11px;
+    letter-spacing: 0.06em;
+    border-bottom: 1px solid var(--border-bright);
+    font-weight: 500;
+  }
+  .schema-table tbody tr {
+    border-bottom: 1px solid var(--border);
+  }
+  .schema-table tbody tr:last-child { border-bottom: none; }
+  .schema-table td {
+    padding: 10px 14px;
+    vertical-align: middle;
+  }
+  .schema-table td:first-child { color: var(--blue); }
+  .type-badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    background: var(--amber-dim);
+    color: var(--amber);
+    border: 1px solid rgba(251,191,36,0.2);
+  }
+  .mode-required {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    background: rgba(239,68,68,0.08);
+    color: #f87171;
+    border: 1px solid rgba(239,68,68,0.2);
+  }
+  .mode-nullable {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    background: var(--surface-alt);
+    color: var(--muted);
+    border: 1px solid var(--border);
+  }
+  .mode-repeated {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+    background: var(--blue-dim);
+    color: var(--blue);
+    border: 1px solid rgba(96,165,250,0.2);
+  }
+  .schema-desc { color: var(--muted); font-family: var(--font-sans); font-size: 12px; }
+
+  /* ── Deploy steps ── */
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step {
+    display: flex;
+    gap: 20px;
+    padding: 24px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .step:last-child { border-bottom: none; }
+  .step-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    width: 24px;
+    flex-shrink: 0;
+    padding-top: 2px;
+  }
+  .step-content h3 {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 6px;
+  }
+  .step-content p {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.65;
+    margin-bottom: 10px;
+  }
+  .code-block {
+    background: var(--surface-alt);
+    border: 1px solid var(--border-bright);
+    border-radius: 6px;
+    padding: 12px 14px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--accent);
+    overflow-x: auto;
+    white-space: pre;
+  }
+
+  /* ── File structure ── */
+  .file-tree {
+    background: var(--surface);
+    border: 1px solid var(--border-bright);
+    border-radius: 8px;
+    padding: 20px 20px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 2;
+  }
+  .ft-dir { color: var(--text); font-weight: 500; }
+  .ft-file { color: var(--muted); padding-left: 20px; }
+  .ft-file::before { content: "├─ "; color: var(--border-bright); }
+  .ft-file:last-child::before { content: "└─ "; color: var(--border-bright); }
+  .ft-note {
+    font-family: var(--font-sans);
+    font-size: 11px;
+    color: #4a5568;
+    margin-left: 6px;
+  }
+
+  /* ── Footer ── */
+  footer {
+    padding: 32px 0;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .footer-badge {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+
+  @media (max-width: 560px) {
+    .arch-flow { flex-direction: column; align-items: flex-start; gap: 16px; }
+    .arch-arrow { transform: rotate(90deg); margin: 0; padding: 4px 0; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="container">
+    <div class="header-inner">
+      <div class="logo">
+        <div class="logo-dot"></div>
+        event-driven-doc-processor
+      </div>
+      <a class="gh-link" href="https://github.com" target="_blank" rel="noopener">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.477 2 12c0 4.418 2.865 8.166 6.839 9.489.5.092.682-.217.682-.482 0-.237-.008-.866-.013-1.7-2.782.603-3.369-1.342-3.369-1.342-.454-1.155-1.11-1.463-1.11-1.463-.908-.62.069-.608.069-.608 1.003.07 1.531 1.03 1.531 1.03.892 1.529 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.11-4.555-4.943 0-1.091.39-1.984 1.029-2.683-.103-.253-.446-1.27.098-2.647 0 0 .84-.269 2.75 1.025A9.578 9.578 0 0 1 12 6.836c.85.004 1.705.115 2.504.337 1.909-1.294 2.747-1.025 2.747-1.025.546 1.377.202 2.394.1 2.647.64.699 1.028 1.592 1.028 2.683 0 3.842-2.339 4.687-4.566 4.935.359.309.678.919.678 1.852 0 1.336-.012 2.415-.012 2.741 0 .267.18.578.688.48C19.138 20.163 22 16.418 22 12c0-5.523-4.477-10-10-10z"/></svg>
+        View on GitHub
+      </a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <p class="eyebrow">Google Cloud · Serverless · Event-Driven</p>
+      <h1>Automatic document<br/>processing <span>on GCP</span></h1>
+      <p class="hero-desc">
+        Upload a file to Cloud Storage and watch it flow — text extracted, metadata tagged,
+        and results streamed into BigQuery in seconds. No servers to manage.
+      </p>
+      <div class="badge-row">
+        <span class="badge">Cloud Run</span>
+        <span class="badge">Pub/Sub</span>
+        <span class="badge">BigQuery</span>
+        <span class="badge">FastAPI</span>
+        <span class="badge">PDF · TXT · PNG</span>
+        <span class="badge">Python 3.11+</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- Architecture -->
+  <section class="section">
+    <div class="container">
+      <p class="section-label">How it works</p>
+
+      <div class="arch-flow">
+        <div class="arch-step">
+          <div class="arch-icon">📤</div>
+          <div class="arch-name">Upload</div>
+          <div class="arch-service">GCS Bucket</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-step">
+          <div class="arch-icon">📡</div>
+          <div class="arch-name">Event</div>
+          <div class="arch-service">Pub/Sub Topic</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-step">
+          <div class="arch-icon">⚙️</div>
+          <div class="arch-name">Process</div>
+          <div class="arch-service">Cloud Run</div>
+        </div>
+        <div class="arch-arrow">→</div>
+        <div class="arch-step">
+          <div class="arch-icon">🗄️</div>
+          <div class="arch-name">Store</div>
+          <div class="arch-service">BigQuery</div>
+        </div>
+      </div>
+
+      <div class="features">
+        <div class="feature">
+          <div class="feature-icon">📄</div>
+          <h3>Multi-format parsing</h3>
+          <p>Handles PDF, plain text, and images. Uses <code>pypdf</code> for PDFs and simulated OCR for scanned images.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🏷️</div>
+          <h3>Auto-tagging</h3>
+          <p>Heuristic keyword extraction generates category tags — financial, medical, legal — based on content.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">⚡</div>
+          <h3>Fully serverless</h3>
+          <p>Cloud Run scales to zero when idle. No VMs, no container orchestration, pay only for what you use.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔁</div>
+          <h3>Idempotent deploy</h3>
+          <p>The deploy scripts check for existing resources before creating them — safe to re-run at any time.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🧪</div>
+          <h3>Local dev mode</h3>
+          <p>Run the full pipeline locally with <code>LOCAL_DEV=true</code>. No GCP credentials needed for testing.</p>
+        </div>
+        <div class="feature">
+          <div class="feature-icon">🔐</div>
+          <h3>GitHub Actions ready</h3>
+          <p>Includes a setup script that provisions a least-privilege service account and outputs a deploy key.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- BigQuery Schema -->
+  <section class="section">
+    <div class="container">
+      <p class="section-label">BigQuery output schema</p>
+      <div style="overflow-x: auto; border: 1px solid var(--border-bright); border-radius: 8px;">
+        <table class="schema-table">
+          <thead>
+            <tr>
+              <th>Field</th>
+              <th>Type</th>
+              <th>Mode</th>
+              <th class="schema-desc">Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>gcs_uri</td>
+              <td><span class="type-badge">STRING</span></td>
+              <td><span class="mode-required">REQUIRED</span></td>
+              <td class="schema-desc" style="font-family:var(--font-sans)">Full GCS URI of the processed file</td>
+            </tr>
+            <tr>
+              <td>filename</td>
+              <td><span class="type-badge">STRING</span></td>
+              <td><span class="mode-required">REQUIRED</span></td>
+              <td class="schema-desc" style="font-family:var(--font-sans)">Original file name</td>
+            </tr>
+            <tr>
+              <td>file_type</td>
+              <td><span class="type-badge">STRING</span></td>
+              <td><span class="mode-nullable">NULLABLE</span></td>
+              <td class="schema-desc" style="font-family:var(--font-sans)">Detected format or extension</td>
+            </tr>
+            <tr>
+              <td>processed_at</td>
+              <td><span class="type-badge">TIMESTAMP</span></td>
+              <td><span class="mode-required">REQUIRED</span></td>
+              <td class="schema-desc" style="font-family:var(--font-sans)">When the document was processed</td>
+            </tr>
+            <tr>
+              <td>word_count</td>
+              <td><span class="type-badge">INTEGER</span></td>
+              <td><span class="mode-nullable">NULLABLE</span></td>
+              <td class="schema-desc" style="font-family:var(--font-sans)">Total words parsed from text</td>
+            </tr>
+            <tr>
+              <td>tags</td>
+              <td><span class="type-badge">STRING</span></td>
+              <td><span class="mode-repeated">REPEATED</span></td>
+              <td class="schema-desc" style="font-family:var(--font-sans)">Heuristic category tags array</td>
+            </tr>
+            <tr>
+              <td>extracted_text</td>
+              <td><span class="type-badge">STRING</span></td>
+              <td><span class="mode-nullable">NULLABLE</span></td>
+              <td class="schema-desc" style="font-family:var(--font-sans)">Full extracted or mock OCR text</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Deploy steps -->
+  <section class="section">
+    <div class="container">
+      <p class="section-label">Quickstart</p>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">01</div>
+          <div class="step-content">
+            <h3>Authenticate with GCP</h3>
+            <p>Log in with the gcloud CLI and set your target project.</p>
+            <div class="code-block">gcloud auth login
+gcloud config set project YOUR_PROJECT_ID</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">02</div>
+          <div class="step-content">
+            <h3>Run the deploy script</h3>
+            <p>The script enables APIs, creates all GCP resources, builds the container, and wires up Pub/Sub — in one command.</p>
+            <div class="code-block"># macOS / Linux
+chmod +x deploy.sh && ./deploy.sh
+
+# Windows PowerShell
+.\deploy.ps1</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">03</div>
+          <div class="step-content">
+            <h3>Upload a document</h3>
+            <p>Drop any PDF, TXT, or image into the provisioned bucket to trigger the pipeline.</p>
+            <div class="code-block">gcloud storage cp my_file.pdf gs://YOUR_PROJECT_ID-document-ingestion/</div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">04</div>
+          <div class="step-content">
+            <h3>Query results in BigQuery</h3>
+            <p>Processed metadata and extracted text appear in BigQuery within seconds.</p>
+            <div class="code-block">SELECT * FROM `document_processing.metadata`
+ORDER BY processed_at DESC LIMIT 10;</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- File structure -->
+  <section class="section">
+    <div class="container">
+      <p class="section-label">Repository layout</p>
+      <div class="file-tree">
+        <div class="ft-dir">src/</div>
+        <div class="ft-file">main.py <span class="ft-note">FastAPI server &amp; Pub/Sub handler</span></div>
+        <div class="ft-file">processor.py <span class="ft-note">PDF, TXT, image text extraction</span></div>
+        <div class="ft-file">models.py <span class="ft-note">Pydantic data models</span></div>
+        <div class="ft-file">requirements.txt</div>
+        <div class="ft-file">Dockerfile</div>
+        <br/>
+        <div class="ft-dir" style="margin-top:0">root/</div>
+        <div class="ft-file">bq_schema.json <span class="ft-note">BigQuery table schema</span></div>
+        <div class="ft-file">deploy.sh <span class="ft-note">macOS / Linux deploy</span></div>
+        <div class="ft-file">deploy.ps1 <span class="ft-note">Windows PowerShell deploy</span></div>
+        <div class="ft-file">setup_gcp_for_github.sh <span class="ft-note">CI service account setup</span></div>
+        <div class="ft-file">test_local.py <span class="ft-note">Local mock event tester</span></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>
+  <div class="container" style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;">
+    <span>Event-Driven Document Processor · Google Cloud</span>
+    <div class="footer-badge">
+      <div class="logo-dot" style="width:6px;height:6px;"></div>
+      Built with FastAPI · Cloud Run · Pub/Sub · BigQuery
+    </div>
+  </div>
+</footer>
+
+</body>
+</html>
